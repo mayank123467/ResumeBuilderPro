@@ -9,7 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          if [ -f ResumeBuilderPro.zip ]; then unzip -o ResumeBuilderPro.zip; fi
+          for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done
+          if [ ! -f settings.gradle.kts ] && [ -d ResumeBuilderPro ]; then cp -rf ResumeBuilderPro/. .; fi
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
