@@ -6,10 +6,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - run: |
-          for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done
+          for z in $(ls -1 *.zip 2>/dev/null | sort -V); do unzip -o "$z"; done
           if [ ! -f settings.gradle.kts ] && [ -d ResumeBuilderPro ]; then cp -rf ResumeBuilderPro/. .; fi
       - uses: actions/setup-java@v4
         with:
@@ -18,9 +20,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-      - run: gradle assembleDebug --no-daemon
+      - run: gradle assembleDebug bundleRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: ResumeBuilderPro-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/bundle/release/app-release.aab
+      - name: Create Public GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk ResumeBuilderPro.apk
+          TAG="v1.0.${{ github.run_number }}"
+          gh release create "$TAG" ResumeBuilderPro.apk \
+            --title "ResumeBuilder Pro $TAG" \
+            --notes "Download ResumeBuilderPro.apk below and install on your Android phone." \
+            --latest
+            
